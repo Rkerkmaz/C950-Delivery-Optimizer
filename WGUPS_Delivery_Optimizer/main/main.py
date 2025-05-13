@@ -1,40 +1,46 @@
-from hashmap import HashMap, Package  # Import HashMap and Package from hashmap.py
-from package_loader import load_packages  # Import the load_packages function
+# main.py
+# STUDENT ID: 010683870
+
+from package_loader import load_packages  # C: Support file for loading packages
+from hashmap import HashMap               # A: Custom hash table implementation (now includes search)
+from load_addresses import load_addresses # C: Address loading
+from delivery_simulation import run_delivery_simulation
+from delivery_helpers import load_distance_matrix, create_address_map  # C: Distance + address mapping
 
 def main():
-    # Initialize the hash map for packages
+    # A: Creating custom hash table instance
     package_hash = HashMap()
 
-    # Load packages into the hash map
-    load_packages("packages.csv", package_hash)
+    # A: Load package data into the hash table from CSV
+    # Each package includes all required fields (address, deadline, city, zip, weight, status)
+    load_packages("packages.csv", package_hash, debug=True)
 
-    # Optional: Print loaded packages to verify
-    for package_id in range(1, 41):  # Assuming 40 packages
-        package = package_hash.search(package_id)
-        if package:
-            print(package)
+    # B: Use the search function to look up a specific package (e.g., package_id = 1)
+    package = package_hash.search(1)  # Example of searching for package with ID 1
+    if package:
+        print(f"Package {package.package_id} found: {package}")
 
-    # Demonstrate searching for a specific package
-    package_id_to_search = 1
-    found_package = package_hash.search(package_id_to_search)
-    if found_package:
-        print(f"Found: {found_package}")
-    else:
-        print(f"Package with ID {package_id_to_search} not found.")
+    # C: Load addresses used in distance calculations
+    location_names = load_addresses("addresses.csv")
+    print(location_names)  # Optional debug output
 
-    # Demonstrate removing a package
-    package_id_to_remove = 1
-    if package_hash.remove(package_id_to_remove):
-        print(f"Package with ID {package_id_to_remove} removed.")
-    else:
-        print(f"Package with ID {package_id_to_remove} not found for removal.")
+    # C: Load distance matrix for routing logic
+    distance_matrix = load_distance_matrix("distances.csv")
 
-    # Try searching for the package again after removal
-    found_package = package_hash.search(package_id_to_remove)
-    if found_package:
-        print(f"Found: {found_package}")
-    else:
-        print(f"Package with ID {package_id_to_remove} not found.")
+    # C: Map address names to indices for distance lookup
+    location_map = create_address_map(location_names)
 
+    print("\n--- Normalized location keys in address map ---")
+    for k in location_map.keys():
+        print(f"  {k}")
+
+    # C, D, E:
+    # - Runs delivery simulation for all trucks and packages
+    # - Tracks and updates time, status, and mileage
+    # - Supports time-based delivery reports and total mileage summary
+    run_delivery_simulation(location_names, distance_matrix, package_hash, location_map)
+
+
+# Entry point
 if __name__ == "__main__":
     main()
