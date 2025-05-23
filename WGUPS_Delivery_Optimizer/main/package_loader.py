@@ -5,34 +5,6 @@ import re
 from datetime import datetime
 from hashmap import Package  # Package class is defined in hashmap.py
 
-# ----------------------------
-# TRUCK CLASS DEFINITION
-# ----------------------------
-
-from datetime import datetime, timedelta
-
-class Truck:
-    def __init__(self, name, start_time, max_capacity=16, speed=18):
-        self.name = name
-        self.start_time = start_time  # datetime object
-        self.current_time = start_time
-        self.capacity = max_capacity
-        self.speed = speed  # mph
-        self.packages = []  # list of Package objects
-        self.miles = 0.0
-        self.route = []
-        self.location = 'HUB'
-
-    def add_package(self, package):
-        if len(self.packages) < self.capacity:
-            self.packages.append(package)
-            package.truck = self.name  # Optional: track which truck it’s on
-        else:
-            print(f"{self.name} is full! Cannot add package {package.package_id}.")
-
-    def is_full(self):
-        return len(self.packages) >= self.capacity
-
 
 # ----------------------------
 # Parse Notes for Constraints
@@ -41,11 +13,6 @@ class Truck:
 def parse_notes(notes):
     """
     Extracts delivery constraints from the 'Special Notes' column in the CSV.
-    This includes:
-        - Specific truck assignment (e.g., "Can only be on truck 2")
-        - Grouped delivery constraints (e.g., "Must be delivered with 15, 19")
-        - Delivery delays (e.g., "Will not arrive until 9:05 AM")
-
     Returns:
         truck_restriction (int or None)
         must_be_delivered_with (list of int)
@@ -65,14 +32,18 @@ def parse_notes(notes):
     if delivered_with_match:
         must_be_delivered_with = [int(x.strip()) for x in delivered_with_match.group(1).split(',')]
 
-    # Match delivery delay time
-    delayed_match = re.search(r'delayed.*until (\d{1,2}:\d{2} ?[ap]m)', notes, re.IGNORECASE)
-    if delayed_match:
-        time_str = delayed_match.group(1).lower().replace(' ', '')
-        delayed_until = datetime.strptime(time_str, '%I:%M%p').time()
+    # Match delivery delay time (more robust)
+    if 'until' in notes.lower():
+        print(f"[Debug] Trying to parse delay time from: '{notes}'")
+        delayed_match = re.search(r'until (\d{1,2}:\d{2} ?[ap]m)', notes, re.IGNORECASE)
+        if delayed_match:
+            try:
+                time_str = delayed_match.group(1).lower().replace(' ', '')
+                delayed_until = datetime.strptime(time_str, '%I:%M%p').time()
+            except ValueError:
+                print(f"[Warning] Failed to parse delay time from note: '{notes}'")
 
     return truck_restriction, must_be_delivered_with, delayed_until
-
 
 # ----------------------------
 # C.1 – Load Package Data into HashMap
